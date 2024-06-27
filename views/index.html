@@ -6,28 +6,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pawnifier</title>
   <link rel="stylesheet" href="static/output.css">
-  <script src="https://unpkg.com/htmx.org@1.9.12"
-    integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2"
+  <script src="https://unpkg.com/htmx.org@2.0.0"
+    integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
     crossorigin="anonymous"></script>
 </head>
 
 <body>
-  <div class="w-screen h-screen p-4">
-    <form hx-post="/api-key" hx-target="">
-      <input type="text" name="api-key" class="input input-bordered" placeholder="Input your api key here" />
-    </form>
-    <div class="grid grid-cols-3 gap-4">
-      {{ range .Mails }}
+  <div class="w-screen h-screen flex flex-col p-4 gap-4">
 
-      <div class="card bg-base-100 shadow-xl">
-        <div class="card-body">
-          <h3 class="card-title">
-            {{ . }}
-          </h3>
-        </div>
+    <button class="btn btn-primary w-full" onclick="createModal.showModal()">Eintrag hinzufügen</button>
+
+    <table class="table table-zebra">
+      <thead>
+        <tr>
+          {{ range .Columns }}
+          <th> {{ . }}</th>
+          {{ end }}
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Data }}
+        <tr>
+          <th> {{ .Id }} </th>
+          <td> <input class="input" type="text" placeholder="Name..." value="{{ .Name }}" /> </td>
+          <td> <input class="input" type="number" placeholder="Age..." value="{{ .Age }}" /> </td>
+          <td> <input class="input" type="text" placeholder="Profession..." value="{{ .Profession }}" /> </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+
+    <dialog id="createModal" class="modal">
+      <div class="modal-box">
+        <h3 class="text-lg font-bold">Insert new entry</h3>
+        <form method="dialog" hx-post="/createEntry" hx-swap="none" hx-on:htmx:after-request="this.reset()"
+          class="flex flex-col gap-2">
+          <input class="input input-bordered" type="text" placeholder="Name..." name="name" />
+          <input class="input input-bordered" type="number" placeholder="Age..." name="age" />
+          <input class="input input-bordered" type="text" placeholder="Profession..." name="profession" />
+          <button class="btn btn-success" type="submit" onclick="createModal.close()">Create</button>
+          <button class="btn btn-error" type="reset" onclick="createModal.close()">Cancel</button>
+        </form>
       </div>
-      {{ end }}
-    </div>
+    </dialog>
   </div>
 </body>
 

@@ -3,16 +3,20 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"log"
+	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/go-sql-driver/mysql"
 )
 
 type TableRow struct {
-	id         int
-	name       string
-	age        int
-	profession string
+	Id         int
+	Name       string
+	Age        int
+	Profession string
 }
 
 type Table struct {
@@ -54,7 +58,7 @@ func main() {
 
 	for rows.Next() {
 		currRow := TableRow{}
-		rows.Scan(&currRow.id, &currRow.name, &currRow.age, &currRow.profession)
+		rows.Scan(&currRow.Id, &currRow.Name, &currRow.Age, &currRow.Profession)
 		tableData.Data = append(tableData.Data, currRow)
 	}
 
@@ -62,4 +66,38 @@ func main() {
 	for _, test := range tableData.Data {
 		fmt.Println(test)
 	}
+
+	fsys := os.DirFS("views/static")
+	fs := http.FileServerFS(fsys)
+
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := template.ParseFiles("views/index.html")
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		err = tmpl.Execute(w, tableData)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+	})
+
+	http.HandleFunc("POST /createEntry", func(w http.ResponseWriter, r *http.Request) {
+		r.ParseForm()
+
+		age, _ := strconv.Atoi(r.PostForm.Get("age"))
+		newRow := TableRow{
+			Age:        age,
+			Name:       r.PostForm.Get("name"),
+			Profession: r.PostForm.Get("profession"),
+		}
+
+		_, err := db.Exec("INSERT INTO test_db (name, age, profession) VALUES (?, ?, ?)", newRow.Name, newRow.Age, newRow.Profession)
+		fmt.Println(err)
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
